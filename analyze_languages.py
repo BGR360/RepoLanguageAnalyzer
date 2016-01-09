@@ -9,11 +9,11 @@ repositories. Specifically, it will analyze all of the user's code and calculate
 different programming languages.
 """
 
-import json
 import operator
 from getpass import getpass
 from github import Github
 from github import GithubException
+from PyChart import PyChart
 
 def sort_by_value(dictionary):
     """
@@ -103,21 +103,27 @@ for repo_percentages in percentages_per_repo:
 ### print percentages_per_language
 
 # Normalize the percentages so they sum to 100
-pie_chart = {}
+pie_chart_data = {}
 total_of_percentages = sum_values(percentages_per_language)
 ### print total_of_percentages
 for language in percentages_per_language:
     percentage = percentages_per_language[language]
     normalized_percentage = float(percentage) / total_of_percentages * 100
-    pie_chart[language] = normalized_percentage
+    # Remove data less than 1.0%
+    if normalized_percentage >= 1.0:
+        pie_chart_data[language] = normalized_percentage
 
-pie_chart = sort_by_value(pie_chart)
-pie_chart.reverse()
+pie_chart_data = sort_by_value(pie_chart_data)
+pie_chart_data.reverse()
 
 # Print out the results
 print
 print "Data has been crunched. Here's what's up with %s's repositories:" % username
 print
-for language, percentage in pie_chart:
+for language, percentage in pie_chart_data:
     print "%s: %.2f%%" % (language, percentage)
 
+# Draw a pie chart for the data
+username.capitalize()
+pie_chart = PyChart("%s's Favorite Programming Languages on GitHub" % username, pie_chart_data)
+pie_chart.draw()
