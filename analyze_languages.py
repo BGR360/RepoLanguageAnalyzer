@@ -14,7 +14,6 @@ from getpass import getpass
 from github import Github
 from github import GithubException
 from PyChart import PyChart
-from GitHubColors import GitHubColors
 
 def sort_by_value(dictionary):
     """
@@ -126,5 +125,5 @@ for language, percentage in pie_chart_data:
 
 # Draw a pie chart for the data
 username.capitalize()
-pie_chart = PyChart("%s's Favorite Programming Languages on GitHub" % username, pie_chart_data)
+pie_chart = PyChart(pie_chart_data)
 pie_chart.draw()
