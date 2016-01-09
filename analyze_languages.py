@@ -14,6 +14,7 @@ from getpass import getpass
 from github import Github
 from github import GithubException
 from PyChart import PyChart
+from GitHubColors import GitHubColors
 
 def sort_by_value(dictionary):
     """
