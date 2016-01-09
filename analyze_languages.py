@@ -56,6 +56,10 @@ except GithubException:
     print "Error: No such user exists. Exiting..."
     exit(1)
 
+print
+print "Cruncing data for user %s..." % username
+print
+
 #----------------------------------
 #      Perform the analysis
 #----------------------------------
@@ -70,11 +74,11 @@ for repo in gh.get_user(username).get_repos():
     if not repo.private:
         # If the repository has "None" as its primary language, don't include it
         if repo.language:
+            print "Found repo: %s - %s" % (repo.name, repo.language)
             # Get the primary language for that repo
             primary_language_per_repo.append(repo.language)
             # Get the number of bytes used in each language
             languages = repo.get_languages()
-            print "%s: %s" % (repo.name, languages)
             # Figure out what percent of the repo is each language
             percentages_in_this_repo = {}
             total_num_bytes = sum_values(languages)
@@ -84,7 +88,7 @@ for repo in gh.get_user(username).get_repos():
                 percentages_in_this_repo[language] = percentage
             percentages_per_repo.append(percentages_in_this_repo)
 
-print percentages_per_repo
+### print percentages_per_repo
 
 # Add up all the percentages from each repo
 percentages_per_language = {}
@@ -96,12 +100,12 @@ for repo_percentages in percentages_per_repo:
         else:
             percentages_per_language[language] = language_percentage
 
-print percentages_per_language
+### print percentages_per_language
 
 # Normalize the percentages so they sum to 100
 pie_chart = {}
 total_of_percentages = sum_values(percentages_per_language)
-print total_of_percentages
+### print total_of_percentages
 for language in percentages_per_language:
     percentage = percentages_per_language[language]
     normalized_percentage = float(percentage) / total_of_percentages * 100
@@ -112,7 +116,8 @@ pie_chart.reverse()
 
 # Print out the results
 print
-print "We crunched the numbers. Here's what's up:"
+print "Data has been crunched. Here's what's up with %s's repositories:" % username
+print
 for language, percentage in pie_chart:
-    print "%s: %.2f" % (language, percentage)
+    print "%s: %.2f%%" % (language, percentage)
 
