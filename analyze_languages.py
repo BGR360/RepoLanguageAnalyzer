@@ -15,6 +15,9 @@ from github import Github
 from github import GithubException
 from PyChart import PyChart
 
+calculate_by_percentage = True
+MIN_PERCENT = 1.0
+
 def sort_by_value(dictionary):
     """
     Sorts a dictionary by its values (not its keys)
@@ -57,7 +60,7 @@ except GithubException:
     exit(1)
 
 print
-print "Cruncing data for user %s..." % username
+print "Crunching data for user %s..." % username
 print
 
 #----------------------------------
@@ -66,12 +69,12 @@ print
 
 # The GitHub API returns how many bytes of code are written in each language.
 percentages_per_repo = []
-total_bytes_per_repo = []
+bytes_per_repo = []
 primary_language_per_repo = []
 
 # Go through all the user's public repositories
 for repo in gh.get_user(username).get_repos():
-    if not repo.private:
+    if not repo.private and not repo.fork:
         # If the repository has "None" as its primary language, don't include it
         if repo.language:
             print "Found repo: %s - %s" % (repo.name, repo.language)
@@ -81,39 +84,61 @@ for repo in gh.get_user(username).get_repos():
             languages = repo.get_languages()
             # Figure out what percent of the repo is each language
             percentages_in_this_repo = {}
+            bytes_in_this_repo = {}
             total_num_bytes = sum_values(languages)
             for language in languages:
                 num_bytes = languages[language]
+                bytes_in_this_repo[language] = num_bytes
                 percentage = float(num_bytes) / total_num_bytes
                 percentages_in_this_repo[language] = percentage
             percentages_per_repo.append(percentages_in_this_repo)
+            bytes_per_repo.append(bytes_in_this_repo)
+    else:
+        print "Skipped repo: %s - %s" % (repo.name, repo.language)
 
 ### print percentages_per_repo
 
-# Add up all the percentages from each repo
-percentages_per_language = {}
-for repo_percentages in percentages_per_repo:
-    for language in repo_percentages:
-        language_percentage = repo_percentages[language]
-        if language in percentages_per_language:
-            percentages_per_language[language] += language_percentage
-        else:
-            percentages_per_language[language] = language_percentage
-
-### print percentages_per_language
-
-# Normalize the percentages so they sum to 100
 pie_chart_data = {}
-total_of_percentages = sum_values(percentages_per_language)
-### print total_of_percentages
-for language in percentages_per_language:
-    percentage = percentages_per_language[language]
-    normalized_percentage = float(percentage) / total_of_percentages * 100
-    # Remove data less than 1.0%
-    if normalized_percentage >= 1.0:
-        pie_chart_data[language] = normalized_percentage
 
-pie_chart_data = sort_by_value(pie_chart_data)
+if calculate_by_percentage:
+    # Add up all the percentages from each repo
+    percentages_per_language = {}
+    for repo_percentages in percentages_per_repo:
+        for language in repo_percentages:
+            language_percentage = repo_percentages[language]
+            if language in percentages_per_language:
+                percentages_per_language[language] += language_percentage
+            else:
+                percentages_per_language[language] = language_percentage
+    ### print percentages_per_language
+
+    pie_chart_data = percentages_per_language
+else:
+    # Calculate based on number of bytes of each language
+    bytes_per_language = {}
+    for repo_bytes in bytes_per_repo:
+        for language in repo_bytes:
+            language_bytes = repo_bytes[language]
+            if language in bytes_per_language:
+                bytes_per_language[language] += language_bytes
+            else:
+                bytes_per_language[language] = language_bytes
+
+    pie_chart_data = bytes_per_language
+
+### print pie_chart_data
+
+# Normalize the values so they sum to 100
+total = sum_values(pie_chart_data)
+pie_copy = {}
+for language in pie_chart_data:
+    value = pie_chart_data[language]
+    percentage = float(value) / total * 100
+    # Remove data less than 1.0%
+    if percentage >= MIN_PERCENT:
+        pie_copy[language] = percentage
+
+pie_chart_data = sort_by_value(pie_copy)
 pie_chart_data.reverse()
 
 # Print out the results
@@ -124,6 +149,5 @@ for language, percentage in pie_chart_data:
     print "%s: %.2f%%" % (language, percentage)
 
 # Draw a pie chart for the data
-username.capitalize()
 pie_chart = PyChart(pie_chart_data)
 pie_chart.draw()
